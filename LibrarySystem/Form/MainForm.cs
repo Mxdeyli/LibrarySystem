@@ -29,7 +29,7 @@ namespace LibrarySystem
         private void InitAccessControl()
         {
             // 权限控制
-            btnManageUsers.Visible = (_currentUser.Role == "Admin");
+            btnManageUsers.Visible = (_currentUser.Role == "admin");
         }
 
         private void LoadBooks()

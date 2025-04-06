@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,10 +11,15 @@ namespace LibrarySystem
 {
     class DBHelper
     {
-        private static string connectionString ="server=localhost;database=LibraryInfoManageDB;uid=root;pwd=null";
+        private static MySqlConnection myConnection;
+        private static string connectionString = "server=127.0.0.1;uid=root;pwd=123456;database=LibraryInfoManageDB";
         public static MySqlConnection GetConnection()
         {
-            return new MySqlConnection(connectionString);
+            myConnection = new MySqlConnection(connectionString);
+            //return new MySqlConnection(connectionString);
+            //myConnection.Open();
+            return myConnection;
+            //return new MySql.Data.MySqlClient.MySqlConnection(connectionString);
         }
         public static DataTable ExecuteQuery(string sql, params MySqlParameter[] parameters) //执行查询操作
         {
@@ -45,3 +51,4 @@ namespace LibrarySystem
         }
     }
 }
+
