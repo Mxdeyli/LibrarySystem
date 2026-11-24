@@ -11,16 +11,14 @@ namespace LibrarySystem
 {
     class DBHelper
     {
-        private static MySqlConnection myConnection;
-        private static string connectionString = "server=127.0.0.1;uid=root;pwd=123456;database=LibraryInfoManageDB";
         public static MySqlConnection GetConnection()
         {
-            myConnection = new MySqlConnection(connectionString);
-            //return new MySqlConnection(connectionString);
-            //myConnection.Open();
-            return myConnection;
-            //return new MySql.Data.MySqlClient.MySqlConnection(connectionString);
+            string connectionString = Environment.GetEnvironmentVariable("LIBRARYSYSTEM_CONNECTION_STRING");
+            if (string.IsNullOrWhiteSpace(connectionString))
+                throw new InvalidOperationException("请先配置 LIBRARYSYSTEM_CONNECTION_STRING。");
+            return new MySqlConnection(connectionString);
         }
+
         public static DataTable ExecuteQuery(string sql, params MySqlParameter[] parameters) //执行查询操作
         {
             using (var conn = GetConnection())
