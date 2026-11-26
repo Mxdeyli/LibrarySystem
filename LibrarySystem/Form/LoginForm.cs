@@ -1,51 +1,43 @@
-﻿using MySql.Data.MySqlClient;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System;
 using System.Windows.Forms;
 using LibrarySystem.Models;
+using LibrarySystem.Services;
+using MySql.Data.MySqlClient;
 
 namespace LibrarySystem
 {
-    public partial class LoginForm: Form
+    public partial class LoginForm : Form
     {
         public LoginForm()
         {
             InitializeComponent();
+            txtPassword.UseSystemPasswordChar = true;
+            AcceptButton = btnLogin;
         }
 
         private void btnLogin_Click(object sender, EventArgs e)
         {
-            string username = txtUsername.Text;
-            string password = txtPassword.Text;  // 实际应使用哈希值比较
-
-            string sql = "SELECT * FROM users WHERE Username = @username AND Password = @password";
-            MySqlParameter[] parameters = {
-        new MySqlParameter("@username", username),
-        new MySqlParameter("@password", password)
-    };
-
-            DataTable dt = DBHelper.ExecuteQuery(sql, parameters);
-            if (dt.Rows.Count > 0)
+            try
             {
-                User currentUser = new User(
-                    Convert.ToInt32(dt.Rows[0]["UserID"]),
-                    dt.Rows[0]["Username"].ToString(),
-                    dt.Rows[0]["Role"].ToString()
-                );
+                User currentUser = AuthService.ValidateUser(txtUsername.Text.Trim(), txtPassword.Text);
+                if (currentUser == null)
+                {
+                    MessageBox.Show("用户名或密码错误。");
+                    return;
+                }
 
-                MainForm mainForm = new MainForm(currentUser);
-                this.Hide();
+                var mainForm = new MainForm(currentUser);
+                mainForm.FormClosed += (s, args) => Close();
                 mainForm.Show();
+                Hide();
             }
-            else
+            catch (MySqlException)
             {
-                MessageBox.Show("登录失败");
+                MessageBox.Show("无法打开图书系统，请检查数据库连接和初始化配置。");
+            }
+            catch (InvalidOperationException error)
+            {
+                MessageBox.Show(error.Message);
             }
         }
     }

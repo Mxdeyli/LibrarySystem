@@ -1,11 +1,6 @@
-﻿using LibrarySystem.Models;
+﻿using System;
+using LibrarySystem.Models;
 using MySql.Data.MySqlClient;
-using Org.BouncyCastle.Crypto.Generators;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace LibrarySystem.Services
 {
@@ -13,23 +8,37 @@ namespace LibrarySystem.Services
     {
         public static User ValidateUser(string username, string password)
         {
-            string sql = @"SELECT UserID, Username, Role, PasswordHash 
-                      FROM users WHERE Username = @username";
-            var dt = DBHelper.ExecuteQuery(sql,
+            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrEmpty(password))
+                return null;
+
+            var users = DBHelper.ExecuteQuery("SELECT * FROM users WHERE Username = @username",
                 new MySqlParameter("@username", username));
+            if (users.Rows.Count != 1)
+                return null;
 
-            if (dt.Rows.Count == 0) return null;
+            var row = users.Rows[0];
+            string hash = users.Columns.Contains("PasswordHash") ? row["PasswordHash"].ToString() : "";
+            bool valid;
+            if (!string.IsNullOrEmpty(hash))
+            {
+                try
+                {
+                    valid = BCrypt.Net.BCrypt.Verify(password, hash);
+                }
+                catch (BCrypt.Net.SaltParseException)
+                {
+                    return null;
+                }
+            }
+            else
+            {
+                valid = users.Columns.Contains("Password") && !row.IsNull("Password")
+                    && string.Equals(password, row["Password"].ToString(), StringComparison.Ordinal);
+            }
 
-            var row = dt.Rows[0];
-            string storedHash = row["PasswordHash"].ToString();
-
-            if (!BCrypt.Net.BCrypt.Verify(password, storedHash)) return null;
-
-            return new User(
-                Convert.ToInt32(row["UserID"]),
-                row["Username"].ToString(),
-                row["Role"].ToString()
-            );
+            return valid
+                ? new User(Convert.ToInt32(row["UserID"]), row["Username"].ToString(), row["Role"].ToString())
+                : null;
         }
     }
 }
